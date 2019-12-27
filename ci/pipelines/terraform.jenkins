@@ -1,0 +1,45 @@
+#!/usr/bin/env groovy
+
+def label = "terraform-jenkins-operator-${UUID.randomUUID().toString()}"
+
+// https://github.com/jenkinsci/kubernetes-operator/issues/119
+// def home = "/home/jenkins"
+def home = "/home/jenkins/agent"
+
+def workspace = "${home}/workspace/build-jenkins-operator"
+def workdir = "${workspace}/src/github.com/rkhozinov/jenkins-operator-playground/"
+
+podTemplate(label: label,
+        containers: [
+                //containerTemplate(name: 'jnlp', image: 'jenkins/jnlp-slave:alpine'),
+                containerTemplate(name: 'tf-12', image: 'hashicorp/terraform:0.12.18', ttyEnabled: true),
+                containerTemplate(name: 'tf-11', image: 'hashicorp/terraform:0.11.14', ttyEnabled: true),
+        ],
+        envVars: [
+                envVar(key: 'GOPATH', value: workspace),
+        ],
+        ) {
+
+    node(label) {
+        dir(workdir) {
+            stage('Terraform v0.11') {
+                timeout(time: 3, unit: 'MINUTES') {
+                    checkout scm
+                }
+                container('tf-11') {
+                    sh 'apk --no-cache --update add jq'
+		    sh 'jq --version'
+		    sh 'terraform --version'
+                }
+            }
+
+            stage('Terraform v0.12') {
+                container('tf-12') {
+                    sh 'apk --no-cache --update add jq'
+		    sh 'jq --version'
+		    sh 'terraform --version'
+                }
+            }
+        }
+    }
+}

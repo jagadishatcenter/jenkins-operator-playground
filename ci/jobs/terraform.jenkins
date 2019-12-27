@@ -1,0 +1,19 @@
+#!/usr/bin/env groovy
+
+pipelineJob('terraform-jenkins-operator') {
+    displayName('Terraform jenkins-operator')
+
+    definition {
+        cpsScm {
+            scm {
+                git {
+                    remote {
+                        url('https://github.com/rkhozinov/jenkins-operator-playground.git')
+                    }
+                    branches('*/master')
+                }
+            }
+            scriptPath('ci/pipelines/terraform.jenkins')
+        }
+    }
+}
